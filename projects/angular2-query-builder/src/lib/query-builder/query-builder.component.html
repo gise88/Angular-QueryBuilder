@@ -55,8 +55,12 @@
   <ul [ngClass]="getClassNames('tree')" *ngIf="data && data.rules">
     <ng-container *ngFor="let rule of data.rules;let i=index">
 
-      <ng-container *ngIf="{ruleset: !!rule.rules, invalid: !config.allowEmptyRulesets && rule.rules && rule.rules.length === 0} as local">
-        <li [ngClass]="getQueryItemClassName(local)">
+      <ng-container *ngIf="{
+        ruleset: !!rule.rules,
+        invalid: isInvalid(rule)
+      } as local">
+
+        <li [ngClass]="getQueryItemClassName(rule, local)">
           <ng-container *ngIf="!local.ruleset">
 
             <ng-container *ngIf="getRemoveButtonTemplate() as template; else defaultRemoveButton">
@@ -165,13 +169,13 @@
           </query-builder>
 
           <ng-container *ngIf="getEmptyWarningTemplate() as template; else defaultEmptyWarning">
-            <ng-container *ngIf="local.invalid">
+            <ng-container *ngIf="local.ruleset && local.invalid">
               <ng-container *ngTemplateOutlet="template; context: getEmptyWarningContext()"></ng-container>
             </ng-container>
           </ng-container>
 
           <ng-template #defaultEmptyWarning>
-            <p [ngClass]="getClassNames('emptyWarning')" *ngIf="local.invalid">
+            <p [ngClass]="getClassNames('emptyWarning')" *ngIf="local.ruleset &&local.invalid">
               {{emptyMessage}}
             </p>
           </ng-template>

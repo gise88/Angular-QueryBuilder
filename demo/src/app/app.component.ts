@@ -1,6 +1,6 @@
 import { FormBuilder, FormControl } from '@angular/forms';
 import { Component } from '@angular/core';
-import { QueryBuilderClassNames, QueryBuilderConfig } from 'angular2-query-builder';
+import {QueryBuilderClassNames, QueryBuilderConfig, Rule, RuleSet} from 'angular2-query-builder';
 
 @Component({
   selector: 'app-root',
@@ -245,11 +245,12 @@ export class AppComponent {
         options: [
           {name: 'Male', value: 'm'},
           {name: 'Female', value: 'f'}
-        ]
+        ],
+        validator: AppComponent.standardValidator
       },
-      name: {name: 'Name', type: 'string', entity: 'nonphysical'},
+      name: {name: 'Name', type: 'string', entity: 'nonphysical', validator: AppComponent.standardValidator},
       notes: {name: 'Notes', type: 'textarea', operators: ['=', '!='], entity: 'nonphysical'},
-      educated: {name: 'College Degree?', type: 'boolean', entity: 'nonphysical'},
+      educated: {name: 'College Degree?', type: 'boolean', entity: 'nonphysical', validator: AppComponent.standardValidator},
       birthday: {name: 'Birthday', type: 'date', operators: ['=', '<=', '>'],
         defaultValue: (() => new Date()), entity: 'nonphysical'
       },
@@ -263,7 +264,8 @@ export class AppComponent {
           {name: 'Teacher', value: 'teacher'},
           {name: 'Unemployed', value: 'unemployed'},
           {name: 'Scientist', value: 'scientist'}
-        ]
+        ],
+        validator: AppComponent.standardValidator
       }
     }
   };
@@ -277,15 +279,15 @@ export class AppComponent {
         options: [
           {name: 'Male', value: 'm'},
           {name: 'Female', value: 'f'}
-        ]
+        ],
+        validator: AppComponent.standardValidator
       },
-      name: {name: 'Name', type: 'string'},
+      name: {name: 'Name', type: 'string', validator: AppComponent.standardValidator},
       notes: {name: 'Notes', type: 'textarea', operators: ['=', '!=']},
       educated: {name: 'College Degree?', type: 'boolean'},
       birthday: {name: 'Birthday', type: 'date', operators: ['=', '<=', '>'],
-        defaultValue: (() => new Date())
-      },
-      school: {name: 'School', type: 'string', nullable: true},
+        defaultValue: (() => new Date()), validator: AppComponent.standardValidator},
+      school: {name: 'School', type: 'string', nullable: true, validator: AppComponent.standardValidator},
       occupation: {
         name: 'Occupation',
         type: 'category',
@@ -294,7 +296,8 @@ export class AppComponent {
           {name: 'Teacher', value: 'teacher'},
           {name: 'Unemployed', value: 'unemployed'},
           {name: 'Scientist', value: 'scientist'}
-        ]
+        ],
+        validator: AppComponent.standardValidator
       }
     }
   };
@@ -308,6 +311,20 @@ export class AppComponent {
   ) {
     this.queryCtrl = this.formBuilder.control(this.query);
     this.currentConfig = this.config;
+  }
+
+  static standardValidator(rule: Rule, ruleset: RuleSet) {
+    if (rule.operator === 'is null' || rule.operator === 'is not null') {
+      return null;
+    }
+    if ([undefined, null, ''].indexOf(rule.value) >= 0) {
+      return 'Value is empty';
+    }
+    if (Array.isArray(rule.value) && rule.value.length === 0) {
+      return 'No selected items';
+    }
+
+    return null;
   }
 
   switchModes(event: Event) {

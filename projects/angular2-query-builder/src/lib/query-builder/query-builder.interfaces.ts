@@ -100,6 +100,7 @@ export interface QueryBuilderConfig {
   removeRuleSet?: (ruleset: RuleSet, parent: RuleSet) => void;
   removeRule?: (rule: Rule, parent: RuleSet) => void;
   coerceValueForOperator?: (operator: string, value: any, rule: Rule) => any;
+  getQueryItemAdditionalClassNames?: (item: RuleSet | Rule, local: LocalRuleMeta) => string;
 }
 
 export interface SwitchGroupContext {

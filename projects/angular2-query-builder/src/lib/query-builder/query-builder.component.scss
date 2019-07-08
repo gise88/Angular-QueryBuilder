@@ -212,6 +212,22 @@
     }
   }
 
+  .q-invalid-rule {
+    border: 2px solid #991515;
+    background: repeating-linear-gradient(
+        -45deg,
+        #fff5f5,
+        #fff8f8 1px,
+        #ffecec 5px,
+        #ffffff 10px
+    );
+
+    &::before,
+    &::after {
+      left: -13px;
+    }
+  }
+
   .q-inline-block-display{
     display: inline-block;
     vertical-align: top;

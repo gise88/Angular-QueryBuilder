@@ -72,7 +72,7 @@ export class QueryBuilderComponent implements OnInit, OnChanges, ControlValueAcc
   public fields: Field[];
   public filterFields: Field[];
   public entities: Entity[];
-  public defaultClassNames: QueryBuilderClassNames = {
+  public defaultClassNames: Required<QueryBuilderClassNames> = {
     arrowIconButton: 'q-arrow-icon-button',
     arrowIcon: 'q-icon q-arrow-icon',
     removeIcon: 'q-icon q-remove-icon',
@@ -92,6 +92,7 @@ export class QueryBuilderComponent implements OnInit, OnChanges, ControlValueAcc
     connector: 'q-connector',
     rule: 'q-rule',
     ruleSet: 'q-ruleset',
+    invalidRule: 'q-invalid-rule',
     invalidRuleSet: 'q-invalid-ruleset',
     emptyWarning: 'q-empty-warning',
     fieldControl: 'q-field-control',
@@ -101,8 +102,12 @@ export class QueryBuilderComponent implements OnInit, OnChanges, ControlValueAcc
     operatorControl: 'q-operator-control',
     operatorControlSize: 'q-control-size',
     inputControl: 'q-input-control',
-    inputControlSize: 'q-control-size'
+    inputControlSize: 'q-control-size',
+    removeButtonSize: '',
+    switchRow: '',
+    switchControl: ''
   };
+
   public defaultOperatorMap: { [key: string]: string[] } = {
     string: ['=', '!=', 'contains', 'like'],
     number: ['=', '!=', '>', '>=', '<', '<='],
@@ -164,11 +169,11 @@ export class QueryBuilderComponent implements OnInit, OnChanges, ControlValueAcc
 
   // ----------OnInit Implementation----------
 
-  ngOnInit() { }
+  ngOnInit(): void { }
 
   // ----------OnChanges Implementation----------
 
-  ngOnChanges(changes: SimpleChanges) {
+  ngOnChanges(changes: SimpleChanges): void {
     const config = this.config;
     const type = typeof config;
     if (type === 'object') {
@@ -614,11 +619,14 @@ export class QueryBuilderComponent implements OnInit, OnChanges, ControlValueAcc
     return t ? t.template : null;
   }
 
-  getQueryItemClassName(local: LocalRuleMeta): string {
+  getQueryItemClassName(item: RuleSet | Rule, local: LocalRuleMeta): string {
     let cls = this.getClassNames('row', 'connector', 'transition');
     cls += ' ' + this.getClassNames(local.ruleset ? 'ruleSet' : 'rule');
     if (local.invalid) {
-      cls += ' ' + this.getClassNames('invalidRuleSet');
+      cls += ' ' + this.getClassNames(local.ruleset ? 'invalidRuleSet' : 'invalidRule');
+    }
+    if (this.config.getQueryItemAdditionalClassNames) {
+      cls += ' ' + this.config.getQueryItemAdditionalClassNames(item, local);
     }
     return cls;
   }
@@ -720,6 +728,41 @@ export class QueryBuilderComponent implements OnInit, OnChanges, ControlValueAcc
     return this.inputContextCache.get(rule);
   }
 
+  isInvalid(item: RuleSet | Rule): boolean {
+    if ((item as RuleSet).rules) {
+      if (!this.config.allowEmptyRulesets && (item as RuleSet).rules.length === 0) {
+        return true;
+      }
+    } else if ((item as Rule).field) {
+      const ruleErrorStore = [];
+      this.validateRule(item as Rule, this.parentValue, ruleErrorStore);
+      return ruleErrorStore.length > 0;
+    }
+    return false;
+  }
+
+  private validateRule(rule: Rule, ruleset: RuleSet, errorStore: any[]): void {
+    const field = this.config.fields[rule.field];
+    if (field && field.validator && field.validator.apply) {
+      const error = field.validator(rule, ruleset);
+      if (error != null) {
+        errorStore.push(error);
+      }
+    }
+  }
+
+  private validateRulesInRuleset(ruleset: RuleSet, errorStore: any[]): void {
+    if (ruleset && ruleset.rules && ruleset.rules.length > 0) {
+      ruleset.rules.forEach((item) => {
+        if ((item as RuleSet).rules) {
+          this.validateRulesInRuleset(item as RuleSet, errorStore);
+        } else if ((item as Rule).field) {
+          this.validateRule(item as Rule, ruleset, errorStore);
+        }
+      });
+    }
+  }
+
   private checkEmptyRuleInRuleset(ruleset: RuleSet): boolean {
     if (!ruleset || !ruleset.rules || ruleset.rules.length === 0) {
       return true;
@@ -729,24 +772,6 @@ export class QueryBuilderComponent implements OnInit, OnChanges, ControlValueAcc
           return this.checkEmptyRuleInRuleset(item);
         } else {
           return false;
-        }
-      });
-    }
-  }
-
-  private validateRulesInRuleset(ruleset: RuleSet, errorStore: any[]) {
-    if (ruleset && ruleset.rules && ruleset.rules.length > 0) {
-      ruleset.rules.forEach((item) => {
-        if ((item as RuleSet).rules) {
-          return this.validateRulesInRuleset(item as RuleSet, errorStore);
-        } else if ((item as Rule).field) {
-          const field = this.config.fields[(item as Rule).field];
-          if (field && field.validator && field.validator.apply) {
-            const error = field.validator(item as Rule, ruleset);
-            if (error != null) {
-              errorStore.push(error);
-            }
-          }
         }
       });
     }
